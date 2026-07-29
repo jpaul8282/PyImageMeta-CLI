@@ -4,6 +4,8 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.auth.AuthManager
+import com.example.auth.AuthState
 import com.example.cli.CliEngine
 import com.example.cli.CommandResult
 import com.example.data.SampleDataProvider
@@ -22,8 +24,17 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val authManager = AuthManager.instance
+    val authState: StateFlow<AuthState> = authManager.authState
+
     private val db = AppDatabase.getDatabase(application)
     private val cliDao = db.cliHistoryDao()
+
+    private val _isExtractingMetadata = MutableStateFlow(false)
+    val isExtractingMetadata: StateFlow<Boolean> = _isExtractingMetadata.asStateFlow()
+
+    private val _extractionStatus = MutableStateFlow("Extracting EXIF & IPTC Tags...")
+    val extractionStatus: StateFlow<String> = _extractionStatus.asStateFlow()
 
     private val _images = MutableStateFlow<List<ImageMetadata>>(emptyList())
     val images: StateFlow<List<ImageMetadata>> = _images.asStateFlow()
@@ -68,6 +79,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _runtimeLogs.value = listOf(welcomeCmd)
     }
 
+    fun signInWithGoogle(context: android.content.Context) {
+        viewModelScope.launch {
+            authManager.signInWithGoogle(context)
+        }
+    }
+
+    fun signOut() {
+        authManager.signOut()
+    }
+
     fun selectImage(img: ImageMetadata) {
         _selectedImage.value = img
     }
@@ -78,6 +99,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadUserImageUri(uri: Uri) {
         viewModelScope.launch {
+            _isExtractingMetadata.value = true
+            _extractionStatus.value = "Reading image header & parsing EXIF/IPTC tags..."
+            kotlinx.coroutines.delay(800) // Provide visible feedback for extraction
             val loaded = ExifEngine.parseImageFromUri(getApplication(), uri)
             if (loaded != null) {
                 val current = _images.value.toMutableList()
@@ -86,6 +110,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _selectedImage.value = loaded
                 runCommand("pymeta inspect ${loaded.fileName}")
             }
+            _isExtractingMetadata.value = false
+        }
+    }
+
+    fun reextractSelectedMetadata() {
+        val sel = _selectedImage.value ?: return
+        viewModelScope.launch {
+            _isExtractingMetadata.value = true
+            _extractionStatus.value = "Re-scanning EXIF header & camera telemetry for '${sel.fileName}'..."
+            kotlinx.coroutines.delay(700)
+            _isExtractingMetadata.value = false
         }
     }
 

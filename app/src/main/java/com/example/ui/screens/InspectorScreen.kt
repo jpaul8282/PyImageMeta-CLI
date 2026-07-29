@@ -14,9 +14,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,8 +49,11 @@ import com.example.ui.theme.Slate850
 fun InspectorScreen(
     images: List<ImageMetadata>,
     selectedImage: ImageMetadata?,
+    isExtractingMetadata: Boolean = false,
+    extractionStatus: String = "",
     onSelectImage: (ImageMetadata) -> Unit,
     onImportUri: (Uri) -> Unit,
+    onReextractMetadata: () -> Unit = {},
     onStripGps: () -> Unit,
     onStripAll: () -> Unit,
     onUpdateIptc: (artist: String, copyright: String) -> Unit,
@@ -91,15 +96,84 @@ fun InspectorScreen(
                     )
                 }
 
-                Button(
-                    onClick = { photoPickerLauncher.launch("image/*") },
-                    colors = ButtonDefaults.buttonColors(containerColor = CyanAccent, contentColor = Color.Black),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.testTag("import_photo_button")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(
+                        onClick = onReextractMetadata,
+                        modifier = Modifier
+                            .background(Slate800, RoundedCornerShape(20.dp))
+                            .testTag("rescan_metadata_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Re-scan EXIF Metadata",
+                            tint = CyanAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = { photoPickerLauncher.launch("image/*") },
+                        colors = ButtonDefaults.buttonColors(containerColor = CyanAccent, contentColor = Color.Black),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.testTag("import_photo_button")
+                    ) {
+                        Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "Import Photo", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // Metadata Extraction Progress Banner
+        if (isExtractingMetadata) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Slate850),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("metadata_extraction_loading_banner")
                 ) {
-                    Icon(imageVector = Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Import Photo", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = CyanAccent,
+                                strokeWidth = 2.5.dp
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Extracting Metadata...",
+                                    color = CyanAccent,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = extractionStatus.ifBlank { "Parsing EXIF, IPTC, and GPS binary tags..." },
+                                    color = Color.LightGray,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = CyanAccent,
+                            trackColor = Slate800
+                        )
+                    }
                 }
             }
         }
@@ -221,7 +295,7 @@ fun InspectorScreen(
                         // Action Buttons Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
                                 onClick = onStripGps,
@@ -232,8 +306,8 @@ fun InspectorScreen(
                                 enabled = selectedImage.hasGps
                             ) {
                                 Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Strip GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(text = "Strip GPS", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Button(
@@ -244,8 +318,8 @@ fun InspectorScreen(
                                     .testTag("strip_all_button")
                             ) {
                                 Icon(imageVector = Icons.Default.Shield, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Strip All", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(text = "Strip All", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Button(
@@ -256,8 +330,25 @@ fun InspectorScreen(
                                     .testTag("edit_iptc_button")
                             ) {
                                 Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Edit IPTC", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(text = "Edit IPTC", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val csvData = com.example.export.ExifCsvExporter.generateCsv(listOf(selectedImage))
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("EXIF CSV", csvData))
+                                    Toast.makeText(context, "EXIF CSV for '${selectedImage.fileName}' copied!", Toast.LENGTH_SHORT).show()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen, contentColor = Color.Black),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("export_csv_button")
+                            ) {
+                                Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(text = "Export CSV", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

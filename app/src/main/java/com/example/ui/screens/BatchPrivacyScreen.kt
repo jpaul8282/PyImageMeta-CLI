@@ -100,7 +100,7 @@ fun BatchPrivacyScreen(
                     // Batch Action Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Button(
                             onClick = onStripGpsForAll,
@@ -110,9 +110,26 @@ fun BatchPrivacyScreen(
                                 .testTag("batch_strip_gps_button"),
                             enabled = gpsCount > 0
                         ) {
-                            Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Strip All GPS", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Icon(imageVector = Icons.Default.GpsFixed, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Strip All GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                val csvReport = com.example.export.ExifCsvExporter.generateCsv(images)
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Catalog CSV", csvReport))
+                                Toast.makeText(context, "Catalog CSV metadata report copied!", Toast.LENGTH_LONG).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen, contentColor = Color.Black),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("export_catalog_csv_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Export Catalog CSV", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Button(
@@ -127,9 +144,9 @@ fun BatchPrivacyScreen(
                                 .weight(1f)
                                 .testTag("export_catalog_json_button")
                         ) {
-                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Export Catalog JSON", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Export JSON", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

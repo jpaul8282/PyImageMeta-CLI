@@ -21,6 +21,7 @@ object CliEngine {
         "pymeta inspect",
         "pymeta strip",
         "pymeta set",
+        "pymeta export-csv",
         "pymeta export-python",
         "pymeta diff",
         "pymeta hash",
@@ -60,6 +61,7 @@ object CliEngine {
             "inspect" -> executeInspect(tokens.drop(2), images)
             "strip" -> executeStrip(tokens.drop(2), images, onImagesUpdated)
             "set" -> executeSet(tokens.drop(2), images, onImagesUpdated)
+            "export-csv" -> executeExportCsv(tokens.drop(2), images)
             "export-python" -> executeExportPython(tokens.drop(2), images)
             "diff" -> executeDiff(tokens.drop(2), images)
             "hash" -> executeHash(tokens.drop(2), images)
@@ -93,6 +95,11 @@ object CliEngine {
                 Modifies IPTC metadata artist & copyright values.
                 Example: pymeta set DSC09241.jpg --artist "John Doe" --copyright "(c) 2026"
             """.trimIndent()
+            "export-csv" -> """
+                Usage: pymeta export-csv <file_name|--all>
+                Exports extracted EXIF metadata into downloadable CSV format.
+                Example: pymeta export-csv --all
+            """.trimIndent()
             "export-python" -> """
                 Usage: pymeta export-python <file_name> [--pep8]
                 Generates PEP 8 compliant Python source code for processing the metadata.
@@ -104,6 +111,7 @@ object CliEngine {
                   pymeta inspect <file|--all>       Display EXIF & IPTC metadata
                   pymeta strip <file|all>           Sanitize GPS location or all tags
                   pymeta set <file> --artist ...    Set author & copyright metadata
+                  pymeta export-csv <file|--all>    Export EXIF metadata into CSV format
                   pymeta export-python <file>       Generate PEP 8 Python library script
                   pymeta diff <file1> <file2>       Compare EXIF tags between two images
                   pymeta hash <file>                Compute MD5 & perceptual image hash
@@ -241,6 +249,26 @@ object CliEngine {
         onImagesUpdated(listCopy)
 
         return "[+] UPDATED TAGS for ${images[idx].fileName}:\n    Artist: '$artist'\n    Copyright: '$copyright'"
+    }
+
+    private fun executeExportCsv(args: List<String>, images: List<ImageMetadata>): String {
+        val targetName = args.firstOrNull() ?: "--all"
+        val selectedImages = if (targetName == "--all" || targetName == "all") {
+            images
+        } else {
+            val match = images.find { it.fileName.equals(targetName, ignoreCase = true) }
+            if (match == null) return "Error: Image '$targetName' not found."
+            listOf(match)
+        }
+
+        val csvContent = com.example.export.ExifCsvExporter.generateCsv(selectedImages)
+        return """
+[+] CSV METADATA EXPORT GENERATED (${selectedImages.size} photos):
+--------------------------------------------------
+$csvContent
+--------------------------------------------------
+(CSV format ready for export / download)
+        """.trimIndent()
     }
 
     private fun executeExportPython(args: List<String>, images: List<ImageMetadata>): String {
