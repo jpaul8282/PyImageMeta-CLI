@@ -1,0 +1,6 @@
+{
+  "name": "PyMeta EXIF Processor",
+  "description": "Image metadata processor, PEP 8 Python library generator & CLI tool",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
