@@ -1,9 +1,6 @@
 package com.example.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +12,7 @@ import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,8 +22,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.export.ExportHelper.ExportFormat
 import com.example.model.ImageMetadata
 import com.example.model.PrivacyStatus
+import com.example.ui.components.ExifExportDialog
 import com.example.ui.components.PrivacyBadge
 import com.example.ui.theme.AmberGold
 import com.example.ui.theme.CyanAccent
@@ -42,6 +41,8 @@ fun BatchPrivacyScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportDialogFormat by remember { mutableStateOf(ExportFormat.CSV) }
 
     val gpsCount = images.count { it.hasGps }
     val secureCount = images.count { !it.hasGps }
@@ -117,10 +118,8 @@ fun BatchPrivacyScreen(
 
                         Button(
                             onClick = {
-                                val csvReport = com.example.export.ExifCsvExporter.generateCsv(images)
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Catalog CSV", csvReport))
-                                Toast.makeText(context, "Catalog CSV metadata report copied!", Toast.LENGTH_LONG).show()
+                                exportDialogFormat = ExportFormat.CSV
+                                showExportDialog = true
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = EmeraldGreen, contentColor = Color.Black),
                             modifier = Modifier
@@ -129,15 +128,13 @@ fun BatchPrivacyScreen(
                         ) {
                             Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Export Catalog CSV", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Export CSV", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Button(
                             onClick = {
-                                val jsonReport = buildCatalogJson(images)
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Catalog JSON", jsonReport))
-                                Toast.makeText(context, "Catalog JSON metadata report copied!", Toast.LENGTH_LONG).show()
+                                exportDialogFormat = ExportFormat.JSON
+                                showExportDialog = true
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = CyanAccent, contentColor = Color.Black),
                             modifier = Modifier
@@ -184,6 +181,16 @@ fun BatchPrivacyScreen(
                 }
             }
         }
+    }
+
+    // Export Dialog (CSV / JSON with direct download, share and copy)
+    if (showExportDialog) {
+        ExifExportDialog(
+            allImages = images,
+            selectedImage = null,
+            initialFormat = exportDialogFormat,
+            onDismissRequest = { showExportDialog = false }
+        )
     }
 }
 

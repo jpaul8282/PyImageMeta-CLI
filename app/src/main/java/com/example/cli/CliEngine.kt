@@ -22,6 +22,7 @@ object CliEngine {
         "pymeta strip",
         "pymeta set",
         "pymeta export-csv",
+        "pymeta export-json",
         "pymeta export-python",
         "pymeta diff",
         "pymeta hash",
@@ -62,6 +63,7 @@ object CliEngine {
             "strip" -> executeStrip(tokens.drop(2), images, onImagesUpdated)
             "set" -> executeSet(tokens.drop(2), images, onImagesUpdated)
             "export-csv" -> executeExportCsv(tokens.drop(2), images)
+            "export-json" -> executeExportJson(tokens.drop(2), images)
             "export-python" -> executeExportPython(tokens.drop(2), images)
             "diff" -> executeDiff(tokens.drop(2), images)
             "hash" -> executeHash(tokens.drop(2), images)
@@ -100,6 +102,11 @@ object CliEngine {
                 Exports extracted EXIF metadata into downloadable CSV format.
                 Example: pymeta export-csv --all
             """.trimIndent()
+            "export-json" -> """
+                Usage: pymeta export-json <file_name|--all> [--compact]
+                Exports extracted EXIF metadata into structured JSON format for APIs & analytics.
+                Example: pymeta export-json --all
+            """.trimIndent()
             "export-python" -> """
                 Usage: pymeta export-python <file_name> [--pep8]
                 Generates PEP 8 compliant Python source code for processing the metadata.
@@ -112,6 +119,7 @@ object CliEngine {
                   pymeta strip <file|all>           Sanitize GPS location or all tags
                   pymeta set <file> --artist ...    Set author & copyright metadata
                   pymeta export-csv <file|--all>    Export EXIF metadata into CSV format
+                  pymeta export-json <file|--all>   Export EXIF metadata into JSON format
                   pymeta export-python <file>       Generate PEP 8 Python library script
                   pymeta diff <file1> <file2>       Compare EXIF tags between two images
                   pymeta hash <file>                Compute MD5 & perceptual image hash
@@ -268,6 +276,31 @@ object CliEngine {
 $csvContent
 --------------------------------------------------
 (CSV format ready for export / download)
+        """.trimIndent()
+    }
+
+    private fun executeExportJson(args: List<String>, images: List<ImageMetadata>): String {
+        val targetName = args.firstOrNull { !it.startsWith("--") } ?: "--all"
+        val isCompact = args.contains("--compact")
+        val selectedImages = if (targetName == "--all" || targetName == "all") {
+            images
+        } else {
+            val match = images.find { it.fileName.equals(targetName, ignoreCase = true) }
+            if (match == null) return "Error: Image '$targetName' not found."
+            listOf(match)
+        }
+
+        val jsonContent = com.example.export.ExifJsonExporter.generateJson(
+            images = selectedImages,
+            prettyPrint = !isCompact,
+            includeAllTags = true
+        )
+        return """
+[+] JSON METADATA EXPORT GENERATED (${selectedImages.size} photos):
+--------------------------------------------------
+$jsonContent
+--------------------------------------------------
+(JSON format compatible with REST APIs, Pandas, and analysis tools)
         """.trimIndent()
     }
 

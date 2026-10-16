@@ -1,18 +1,74 @@
+# ==============================================================================
+# PyMeta Android & Kotlin Root .gitignore
+# Complete specification for Android Studio, Gradle, Kotlin, CMake, and Release Art
+# ==============================================================================
+
+# Built application files & artifacts
+*.apk
+*.aar
+*.aab
+*.ap_
+*.dex
+
+# Files for the ART/Dalvik VM
+*.class
+
+# Gradle cache and runtime directories
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+
+# Android Studio & IntelliJ IDEA files
 *.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetSelector.xml
+.idea/compiler.xml
+.idea/jarRepositories.xml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Operating System Files
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Environment and Secrets (Never commit secrets!)
 .env
+.env.local
+local.properties
+
+# Keystores & Signing Keys
+*.jks
+*.keystore
 debug.keystore
+debug.keystore.base64
+
+# Log files
+*.log
+
+# ProGuard / R8 mapping output files
+mapping/
+**/build/outputs/mapping/
+**/build/outputs/tombstones/
+seeds.txt
+usage.txt
+
+# Robolectric & Test cache
+robolectric-test-runner/
+.build-outputs/
+
+# Google Services private credentials (if applicable)
+google-services.json

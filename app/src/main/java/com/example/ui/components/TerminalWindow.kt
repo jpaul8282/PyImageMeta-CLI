@@ -47,6 +47,8 @@ fun TerminalWindow(
 ) {
     val quickCommands = listOf(
         "pymeta inspect --all",
+        "pymeta export-json --all",
+        "pymeta export-csv --all",
         "pymeta strip all --gps-only",
         "pymeta export-python",
         "pymeta diff DSC09241.jpg CR3_0014.jpg",

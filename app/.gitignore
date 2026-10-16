@@ -1,1 +1,14 @@
-/build
+# App module build outputs
+/build/
+*.apk
+*.aar
+*.aab
+
+# Local schemas & generated code
+/schemas/
+
+# ProGuard and R8 outputs
+mapping.txt
+seeds.txt
+usage.txt
+dump.txt

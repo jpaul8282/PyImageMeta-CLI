@@ -63,7 +63,9 @@ object ExifEngine {
                 dateTime = exif.getAttribute(ExifInterface.TAG_DATETIME) ?: "N/A"
                 exposureTime = exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let { "${it}s" } ?: "N/A"
                 aperture = exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f/$it" } ?: "N/A"
-                iso = exif.getAttribute(ExifInterface.TAG_ISO_SPEED_RATINGS) ?: "N/A"
+                iso = exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)
+                    ?: @Suppress("DEPRECATION") exif.getAttribute(ExifInterface.TAG_ISO_SPEED_RATINGS)
+                    ?: "N/A"
                 focalLength = exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it}mm" } ?: "N/A"
                 flash = exif.getAttribute(ExifInterface.TAG_FLASH) ?: "Off"
                 whiteBalance = exif.getAttribute(ExifInterface.TAG_WHITE_BALANCE) ?: "Auto"

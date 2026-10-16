@@ -98,6 +98,8 @@ fun CliTerminalScreen(
                     }
 
                     CliRefRow("pymeta inspect <file|--all>", "Extract EXIF tags, GPS location, and camera specs.")
+                    CliRefRow("pymeta export-csv <file|--all>", "Export EXIF metadata into CSV format for Pandas/Excel.")
+                    CliRefRow("pymeta export-json <file|--all>", "Export structured JSON for APIs and analytical pipelines.")
                     CliRefRow("pymeta strip <file|all> [--gps-only]", "Sanitize sensitive location or strip all metadata.")
                     CliRefRow("pymeta set <file> --artist ...", "Modify author and copyright metadata tags.")
                     CliRefRow("pymeta export-python <file>", "Generate PEP 8 compliant Python script.")

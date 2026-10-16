@@ -5,10 +5,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [CliHistoryEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [CliHistoryEntity::class, ImageMetadataEntity::class],
+    version = 2,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun cliHistoryDao(): CliHistoryDao
+    abstract fun imageMetadataDao(): ImageMetadataDao
 
     companion object {
         @Volatile
@@ -20,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "pymeta_exif_database"
-                ).fallbackToDestructiveMigration().build()
+                ).fallbackToDestructiveMigration(true).build()
                 INSTANCE = instance
                 instance
             }

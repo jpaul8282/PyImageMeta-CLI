@@ -11,9 +11,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ImageSearch
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.auth.AuthState
 import com.example.ui.MainViewModel
+import com.example.ui.screens.AcademyScreen
 import com.example.ui.screens.BatchPrivacyScreen
 import com.example.ui.screens.CliTerminalScreen
 import com.example.ui.screens.InspectorScreen
@@ -42,10 +45,11 @@ import com.example.ui.theme.Slate850
 import com.example.ui.theme.Slate900
 
 sealed class NavTab(val title: String, val icon: ImageVector, val tag: String) {
-    object Inspector : NavTab("Inspector", Icons.Default.ImageSearch, "tab_inspector")
+    object Inspector : NavTab("Meta AI Gen", Icons.Default.AutoAwesome, "tab_inspector")
     object Cli : NavTab("CLI Shell", Icons.Default.Terminal, "tab_cli")
     object Python : NavTab("Python PEP 8", Icons.Default.Code, "tab_python")
     object Batch : NavTab("Batch Privacy", Icons.Default.Security, "tab_batch")
+    object Academy : NavTab("Academy", Icons.Default.School, "tab_academy")
 }
 
 class MainActivity : ComponentActivity() {
@@ -71,6 +75,22 @@ class MainActivity : ComponentActivity() {
                 val authState by viewModel.authState.collectAsState()
                 val isExtractingMetadata by viewModel.isExtractingMetadata.collectAsState()
                 val extractionStatus by viewModel.extractionStatus.collectAsState()
+                val courseProgress by viewModel.courseProgress.collectAsState()
+                val userBadges by viewModel.userBadges.collectAsState()
+                val courses by viewModel.courses.collectAsState()
+                val voiceState by viewModel.voiceState.collectAsState()
+                val isGeneratingCourse by viewModel.isGeneratingCourse.collectAsState()
+                val generationStatus by viewModel.generationStatus.collectAsState()
+
+                // Room Database & Batch Processing State
+                val pagedRoomImages by viewModel.pagedRoomImages.collectAsState()
+                val totalRoomImagesCount by viewModel.totalRoomImagesCount.collectAsState()
+                val currentPage by viewModel.currentPage.collectAsState()
+                val pageSize by viewModel.pageSize.collectAsState()
+                val searchQuery by viewModel.searchQuery.collectAsState()
+                val isBatchProcessing by viewModel.isBatchProcessing.collectAsState()
+                val batchProcessingProgress by viewModel.batchProcessingProgress.collectAsState()
+                val batchProcessingStatus by viewModel.batchProcessingStatus.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -104,13 +124,13 @@ class MainActivity : ComponentActivity() {
                             contentColor = CyanAccent,
                             tonalElevation = 8.dp
                         ) {
-                            val tabs = listOf(NavTab.Inspector, NavTab.Cli, NavTab.Python, NavTab.Batch)
+                            val tabs = listOf(NavTab.Inspector, NavTab.Cli, NavTab.Python, NavTab.Batch, NavTab.Academy)
                             tabs.forEach { tab ->
                                 NavigationBarItem(
                                     selected = currentTab == tab,
                                     onClick = { currentTab = tab },
                                     icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
-                                    label = { Text(text = tab.title) },
+                                    label = { Text(text = tab.title, fontSize = 11.sp, maxLines = 1) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = Slate900,
                                         selectedTextColor = CyanAccent,
@@ -132,8 +152,28 @@ class MainActivity : ComponentActivity() {
                             selectedImage = selectedImage,
                             isExtractingMetadata = isExtractingMetadata,
                             extractionStatus = extractionStatus,
+                            pagedRoomImages = pagedRoomImages,
+                            totalRoomImagesCount = totalRoomImagesCount,
+                            currentPage = currentPage,
+                            pageSize = pageSize,
+                            searchQuery = searchQuery,
+                            isBatchProcessing = isBatchProcessing,
+                            batchProcessingProgress = batchProcessingProgress,
+                            batchProcessingStatus = batchProcessingStatus,
                             onSelectImage = { viewModel.selectImage(it) },
                             onImportUri = { viewModel.loadUserImageUri(it) },
+                            onBatchImportUris = { viewModel.processBatchImageUris(it) },
+                            onSetPage = { viewModel.setPage(it) },
+                            onNextPage = { viewModel.nextPage(it) },
+                            onPreviousPage = { viewModel.previousPage() },
+                            onSetPageSize = { viewModel.setPageSize(it) },
+                            onSetSearchQuery = { viewModel.setSearchQuery(it) },
+                            onGenerateAiMetaForEntity = { entity, prompt ->
+                                viewModel.generateAiMetadataForEntity(entity, prompt)
+                            },
+                            onBatchGenerateAiMetaForAll = { viewModel.batchGenerateAiMetadataForAll() },
+                            onDeleteFromRoom = { viewModel.deleteImageFromRoom(it) },
+                            onClearRoomDb = { viewModel.clearRoomDatabase() },
                             onReextractMetadata = { viewModel.reextractSelectedMetadata() },
                             onStripGps = { viewModel.stripLocationForSelected() },
                             onStripAll = { viewModel.stripAllForSelected() },
@@ -160,6 +200,46 @@ class MainActivity : ComponentActivity() {
                         NavTab.Batch -> BatchPrivacyScreen(
                             images = images,
                             onStripGpsForAll = { viewModel.stripGpsForAll() },
+                            modifier = contentModifier
+                        )
+                        NavTab.Academy -> AcademyScreen(
+                            courses = courses,
+                            courseProgress = courseProgress,
+                            userBadges = userBadges,
+                            documentations = viewModel.documentations,
+                            voiceState = voiceState,
+                            isGeneratingCourse = isGeneratingCourse,
+                            generationStatus = generationStatus,
+                            onCompleteLesson = { courseId, lessonId ->
+                                viewModel.completeLesson(courseId, lessonId)
+                            },
+                            onSubmitQuiz = { courseId, score ->
+                                viewModel.submitQuiz(courseId, score)
+                            },
+                            onGenerateUclaMaster = {
+                                viewModel.generateUclaMasterDegree()
+                            },
+                            onGenerateCustomCourse = { topic, level, persona, apiKey ->
+                                viewModel.generateCustomCourse(
+                                    topicPrompt = topic,
+                                    academicLevel = level,
+                                    lecturerPersona = persona,
+                                    apiKey = apiKey
+                                )
+                            },
+                            onPlayVoiceLesson = { lesson, readTakeawaysOnly ->
+                                viewModel.speakLesson(
+                                    lesson = lesson,
+                                    lecturerPersona = lesson.voiceLecturerPersona ?: "Dr. Bruin — UCLA AI Voice Fellow",
+                                    readTakeawaysOnly = readTakeawaysOnly
+                                )
+                            },
+                            onPauseVoice = { viewModel.pauseVoiceLecture() },
+                            onResumeVoice = { viewModel.resumeVoiceLecture() },
+                            onStopVoice = { viewModel.stopVoiceLecture() },
+                            onSetVoiceSpeed = { viewModel.setVoiceSpeed(it) },
+                            onSetVoicePitch = { viewModel.setVoicePitch(it) },
+                            onTestVoiceSpeech = { viewModel.testVoiceSpeech(it) },
                             modifier = contentModifier
                         )
                     }
@@ -229,7 +309,7 @@ private fun AuthHeaderButton(
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(Icons.Default.Logout, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
+                                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
                                 Text("Sign Out", color = Color.White, fontSize = 12.sp)
                             }
                         },
